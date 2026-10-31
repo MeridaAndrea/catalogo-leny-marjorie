@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=a6d1eae6-1047-4cb0-8dc5-4e233ab5fc73
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Editor | Leny Marjorie</title>
+<style>
+:root{--bg:#fff7f9;--rosa:#f3c4d2;--esc:#b8456b;--tx:#3a2a31;--su:#8a6f79;--li:#f1dce3}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:16px 14px 110px;max-width:860px;margin:auto;line-height:1.45}
+h1{font-size:26px;color:var(--esc)}h2{font-size:18px;margin:22px 0 8px}h4{margin:16px 0 6px;color:var(--esc);font-size:13px;letter-spacing:.12em;text-transform:uppercase}
+.card{background:#fff;border:1px solid var(--li);border-radius:14px;padding:14px;margin-top:10px}
+.steps{display:grid;gap:6px;margin-top:10px}.steps div{background:#fff;border:1px solid var(--li);border-radius:12px;padding:10px 12px}
+.steps b{color:var(--esc)}
+label{display:block;font-size:13px;color:var(--su);margin-top:8px}
+input,select{width:100%;font:inherit;font-size:16px;padding:10px;border:1px solid var(--rosa);border-radius:10px;background:#fff;color:var(--tx);margin-top:3px}
+.hint{font-size:12px;color:var(--su);margin-top:3px}
+.btn{background:var(--esc);color:#fff;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer}
+.btn.s{padding:7px 12px;font-size:14px;background:#fff;color:var(--esc);border:1px solid var(--esc)}
+.btn.big{padding:14px 20px;font-size:17px}
+.lnk{background:none;border:0;color:var(--su);text-decoration:underline;cursor:pointer;font:inherit;font-size:13px;margin-left:8px}
+.danger{background:none;border:1px solid #d33;color:#d33;border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit;margin-top:14px}
+details.look{background:#fff;border:1px solid var(--li);border-radius:14px;margin-top:10px}
+details.look>summary{padding:14px;font-weight:600;cursor:pointer;font-size:17px}
+details.look .body{padding:0 14px 14px}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.pic{display:flex;gap:10px;align-items:center}
+.pic img{width:70px;height:96px;object-fit:cover;border-radius:10px;background:var(--rosa);flex:none}
+.pic.sm img{width:52px;height:64px}
+.pic b{display:block;font-size:13px;margin-bottom:4px}
+.it{border:1px dashed var(--rosa);border-radius:12px;padding:10px;margin-top:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--li);padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+#st{font-size:13px;color:var(--su)}
+.xs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.xt{display:flex;flex-direction:column;align-items:center}
+.xt img{width:44px;height:56px;object-fit:cover;border-radius:8px}
+@media(max-width:560px){.pics{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Editor do catálogo 💗</h1>
+<p class="hint">Mude o que quiser aqui. Nada vai pro ar até você baixar e enviar (passos abaixo).</p>
+<div class="steps">
+  <div><b>1.</b> Edite nomes, preços, fotos e o WhatsApp nos blocos abaixo.</div>
+  <div><b>2.</b> Clique em <b>Baixar site atualizado</b> (botão rosa lá embaixo). Descompacte o arquivo (botão direito → Extrair tudo).</div>
+  <div><b>3.</b> No Netlify, abra seu site → <b>Deploys</b> → arraste a <b>pasta</b> que foi criada. Pronto!</div>
+</div>
+
+<h2>Dados da loja</h2>
+<div class="card" id="cfg"></div>
+
+<h2>Looks e peças</h2>
+<div id="looks"></div>
+<button class="btn s" data-add-look style="margin-top:12px">+ Novo look</button>
+
+<div class="bar"><button class="btn big" data-save>⬇ Baixar site atualizado</button><span id="st"></span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="produtos.js"></script>
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var esc = function(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); };
+  var S = { cfg: JSON.parse(JSON.stringify(window.CONFIG)), looks: JSON.parse(JSON.stringify(window.LOOKS)) };
+  var newImgs = {}, dirty = false, seq = 0;
+  var urlOf = function(p){ return newImgs[p] ? newImgs[p].url : p; };
+  var KS = ["pecas","acessorios"];
+
+  function ref(el){ var d = el.dataset; if (d.l === undefined) return S.cfg; var L = S.looks[+d.l]; return d.k === undefined ? L : L[d.k][+d.i]; }
+  function A(l,k,i,f){ return (l!==undefined?' data-l="'+l+'"':'')+(k!==undefined?' data-k="'+k+'"':'')+(i!==undefined?' data-i="'+i+'"':'')+(f?' data-f="'+f+'"':''); }
+
+  function pic(label, path, a, clear, small){
+    return '<div class="pic'+(small?' sm':'')+'"><img'+(path?' src="'+esc(urlOf(path))+'"':'')+' alt=""><div><b>'+label+'</b>'+
+      '<button type="button" class="btn s" data-pick'+a+'>'+(path?'Trocar foto':'Escolher foto')+'</button>'+
+      (clear && path ? '<button type="button" class="lnk" data-clear'+a+'>tirar foto</button>' : '')+'</div></div>';
+  }
+
+  function cfgHTML(){
+    var c = S.cfg;
+    return '<label>WhatsApp que recebe os pedidos<input inputmode="numeric" placeholder="5511987654321"'+A(undefined,undefined,undefined,"whatsapp")+' value="'+esc(c.whatsapp)+'"></label>'+
+      '<div class="hint">Só números: 55 + DDD + número. Ex.: 5511987654321 (troque aqui pelo número da Leny quando acabar os testes)</div>'+
+      '<div class="row2"><label>Nome da loja<input data-f="loja" value="'+esc(c.loja)+'"></label><label>Subtítulo<input data-f="subtitulo" value="'+esc(c.subtitulo)+'"></label></div>'+
+      '<label>Instagram (sem @)<input data-f="instagram" value="'+esc(c.instagram)+'"></label>'+
+      '<label>Categorias (separe por vírgula)<input data-f="categorias" value="'+esc((c.categorias||[]).join(", "))+'"></label>'+
+      '<div class="hint">São os botões de busca do site. Depois de mudar, saia do campo que as listas dos itens se atualizam.</div>'+
+      '<div style="margin-top:10px">'+pic("Logo", c.logo, A(undefined,undefined,undefined,"logo"), false)+'</div>';
+  }
+
+  function itemHTML(p, l, k, i){
+    var a = function(f){ return A(l,k,i,f); };
+    var cats = (S.cfg.categorias||[]).slice(); if (p.cat && cats.indexOf(p.cat) < 0) cats.push(p.cat);
+    var opts = '<option value="">(sem categoria)</option>' + cats.map(function(c){ return '<option'+(c===p.cat?' selected':'')+'>'+esc(c)+'</option>'; }).join("");
+    return '<div class="it" data-id="'+esc(p.id)+'">'+
+      pic("Foto da peça (opcional)", p.foto, a("foto"), true, true)+
+      '<label>Nome<input'+a("nome")+' value="'+esc(p.nome)+'"></label>'+
+      '<div class="row2"><label>Preço (R$)<input type="number" step="0.01" min="0" inputmode="decimal"'+a("preco")+' value="'+esc(p.preco)+'"></label>'+
+      '<label>Categoria<select'+a("cat")+'>'+opts+'</select></label></div>'+
+      '<label>Tamanhos (separe por vírgula)<input'+a("tamanhos")+' placeholder="deixe vazio = tamanho único" value="'+esc((p.tamanhos||[]).join(", "))+'"></label>'+
+      '<label>Cores (separe por vírgula)<input'+a("cores")+' placeholder="deixe vazio = sem escolha de cor" value="'+esc((p.cores||[]).join(", "))+'"></label>'+
+      '<div class="xs">'+(p.fotoExtra||[]).map(function(f,x){ return '<span class="xt"><img src="'+esc(urlOf(f))+'" alt=""><button type="button" class="lnk" data-delx data-x="'+x+'"'+A(l,k,i)+'>tirar</button></span>'; }).join("")+
+      '<button type="button" class="btn s" data-pick'+A(l,k,i,"fotoExtra")+' data-x="new">+ Foto extra</button></div>'+
+      '<button class="danger" data-del-item'+A(l,k,i)+'>Remover item</button></div>';
+  }
+
+  function lookHTML(L, l, open){
+    return '<details class="look"'+(open?' open':'')+'><summary>'+(L.avulso?'':'Look '+(l+1)+' — ')+esc(L.nome)+'</summary><div class="body">'+
+      '<label>Nome do look<input'+A(l,undefined,undefined,"nome")+' value="'+esc(L.nome)+'"></label>'+
+      (L.avulso ? '<p class="hint">Itens que aparecem só na busca e nas categorias (não ficam dentro de um look).</p>' : '<div class="pics">'+pic("Foto da modelo", L.fotoModelo, A(l,undefined,undefined,"fotoModelo"), false)+pic("Foto das peças", L.fotoPecas, A(l,undefined,undefined,"fotoPecas"), false)+'</div>')+
+      '<h4>Peças</h4>'+L.pecas.map(function(p,i){ return itemHTML(p,l,"pecas",i); }).join("")+
+      '<button class="btn s" style="margin-top:10px" data-add'+A(l,"pecas")+'>+ Adicionar peça</button>'+
+      '<h4>Acessórios</h4>'+L.acessorios.map(function(p,i){ return itemHTML(p,l,"acessorios",i); }).join("")+
+      '<button class="btn s" style="margin-top:10px" data-add'+A(l,"acessorios")+'>+ Adicionar acessório</button><br>'+
+      '<button class="danger" data-del-look'+A(l)+'>Remover este look inteiro</button></div></details>';
+  }
+
+  function render(openLast){
+    var op = [].map.call(document.querySelectorAll("details.look"), function(d){ return d.open; });
+    $("#cfg").innerHTML = cfgHTML();
+    $("#looks").innerHTML = S.looks.map(function(L,l){
+      return lookHTML(L, l, openLast && l === S.looks.length-1 ? true : (op[l] === undefined ? l === 0 : op[l]));
+    }).join("");
+  }
+
+  // item repetido em vários looks (ex.: relógio) muda em todos
+  function sync(o, f){
+    S.looks.forEach(function(L,l){ KS.forEach(function(k){ L[k].forEach(function(p,i){
+      if (p !== o && p.id === o.id) {
+        p[f] = o[f];
+        var inp = document.querySelector('[data-l="'+l+'"][data-k="'+k+'"][data-i="'+i+'"][data-f="'+f+'"]');
+        if (inp && f !== "foto") inp.value = Array.isArray(o[f]) ? o[f].join(", ") : o[f];
+      }
+    }); }); });
+  }
+
+  function onEdit(e){
+    var el = e.target, f = el.dataset && el.dataset.f; if (!f || el.type === "file") return;
+    var o = ref(el), v = el.value;
+    if (f === "preco") v = parseFloat(String(v).replace(",", ".")) || 0;
+    else if (f === "tamanhos" || f === "cores" || f === "categorias") v = v.split(/[,;]/).map(function(x){ return x.trim(); }).filter(Boolean);
+    o[f] = v; if (o.id) sync(o, f); dirty = true;
+    if (f === "categorias" && e.type === "change") render();
+  }
+  document.addEventListener("input", onEdit); document.addEventListener("change", onEdit);
+
+  function resize(file){
+    return new Promise(function(res, rej){
+      var img = new Image();
+      img.onload = function(){
+        var r = Math.min(1, 900/img.width), c = document.createElement("canvas");
+        c.width = Math.round(img.width*r); c.height = Math.round(img.height*r);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function(b){ res(b); }, "image/jpeg", 0.82);
+      };
+      img.onerror = function(){ rej(); };
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  function pick(b){
+    var inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+    inp.onchange = function(){
+      var f = inp.files[0]; if (!f) return;
+      resize(f).then(function(blob){
+        var path = "img/novo-" + Date.now().toString(36) + (seq++) + ".jpg";
+        newImgs[path] = { blob: blob, url: URL.createObjectURL(blob) };
+        var o = ref(b), key = b.dataset.f;
+        if (b.dataset.x === "new") (o.fotoExtra = o.fotoExtra || []).push(path); else o[key] = path;
+        if (o.id) sync(o, key);
+        dirty = true; render();
+      }, function(){ alert("Não consegui abrir essa imagem. Tente uma foto JPG ou PNG."); });
+    };
+    inp.click();
+  }
+
+  document.addEventListener("click", function(e){
+    var b = e.target.closest("button"); if (!b) return; var d = b.dataset;
+    if ("pick" in d) pick(b);
+    else if ("clear" in d) { ref(b).foto = ""; dirty = true; render(); }
+    else if ("delx" in d) { ref(b).fotoExtra.splice(+d.x, 1); dirty = true; render(); }
+    else if ("add" in d) {
+      S.looks[+d.l][d.k].push({ id: "item-" + Date.now().toString(36) + (seq++), nome: "Novo item", preco: 0, cat: (S.cfg.categorias||[])[0] || "", tamanhos: d.k === "pecas" ? ["P","M"] : [] });
+      dirty = true; render();
+    }
+    else if ("delItem" in d) { if (confirm("Remover este item?")) { S.looks[+d.l][d.k].splice(+d.i, 1); dirty = true; render(); } }
+    else if ("delLook" in d) { if (confirm("Remover o look inteiro?")) { S.looks.splice(+d.l, 1); dirty = true; render(); } }
+    else if ("addLook" in d) { S.looks.push({ nome: "Novo look", fotoModelo: "", fotoPecas: "", pecas: [], acessorios: [] }); dirty = true; render(true); }
+    else if ("save" in d) exportZip();
+  });
+
+  window.addEventListener("beforeunload", function(e){ if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+  function say(t){ $("#st").textContent = t; }
+
+  async function exportZip(){
+    var cfg = JSON.parse(JSON.stringify(S.cfg)), looks = JSON.parse(JSON.stringify(S.looks));
+    var z = String(cfg.whatsapp||"").replace(/\D/g, "");
+    if (!/^\d{12,13}$/.test(z) && !confirm("O número do WhatsApp parece incompleto (precisa ser 55 + DDD + número). Baixar mesmo assim?")) return;
+    cfg.whatsapp = z || cfg.whatsapp; cfg.instagram = String(cfg.instagram||"").replace(/^@/, "").trim();
+    var semFoto = looks.filter(function(L){ return !L.avulso && (!L.fotoModelo || !L.fotoPecas); }).map(function(L){ return L.nome; });
+    if (semFoto.length) { alert("Faltam fotos (modelo e peças) no look: " + semFoto.join(", ")); return; }
+
+    var paths = {}; if (cfg.logo) paths[cfg.logo] = 1;
+    looks.forEach(function(L){ if (L.fotoModelo) paths[L.fotoModelo] = 1; if (L.fotoPecas) paths[L.fotoPecas] = 1; KS.forEach(function(k){ L[k].forEach(function(p){ if (p.foto) paths[p.foto] = 1; else delete p.foto; if (p.fotoExtra && p.fotoExtra.length) p.fotoExtra.forEach(function(f){ paths[f] = 1; }); else delete p.fotoExtra; }); }); });
+
+    try {
+      say("Preparando o arquivo…");
+      var zip = new JSZip(), falhou = [];
+      for (var n of ["index.html", "editor.html"]) zip.file(n, await (await fetch(n)).text());
+      zip.file("produtos.js", "/* Gerado pelo editor.html. Não precisa mexer à mão. */\nwindow.CONFIG = " + JSON.stringify(cfg, null, 2) + ";\n\nwindow.LOOKS = " + JSON.stringify(looks, null, 2) + ";\n");
+      for (var p of Object.keys(paths)) {
+        try {
+          var blob = newImgs[p] ? newImgs[p].blob : await (await fetch(p)).blob();
+          zip.file(p, blob);
+        } catch (err) { falhou.push(p); }
+      }
+      var out = await zip.generateAsync({ type: "blob" });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(out); a.download = "site-leny-marjorie.zip";
+      document.body.appendChild(a); a.click(); a.remove();
+      dirty = false;
+      say(falhou.length ? "Baixado, mas não achei estas fotos: " + falhou.join(", ") : "Pronto! Agora siga o passo 2 e 3 lá em cima.");
+    } catch (err) { say("Deu erro ao preparar. Abra o editor pelo link do site (não pelo arquivo no computador)."); }
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
+<script async src="/.netlify/scripts/hud?variant=public" data-nf-variant="public" data-netlify-site-id="a6d1eae6-1047-4cb0-8dc5-4e233ab5fc73" data-app-host="app.netlify.com" data-account-tier="free"></script>
